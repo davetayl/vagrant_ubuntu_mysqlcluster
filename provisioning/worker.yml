@@ -62,4 +62,4 @@
         master_user: repl_user
         master_password: repl_password
         master_log_file: "{{ master_status.stdout | regex_search('File: (.*)', '\\1') }}"
-        master_log_pos: "{{ master_status.stdout | regex_search('Position:[0] (.*)', '\\1') }}"
+        master_log_pos: "{{ master_status.stdout | regex_search('Position: (.*)', '\\1') }}"

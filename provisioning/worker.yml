@@ -1,0 +1,65 @@
+---
+- name: Update Debian Bullseye64 and set up MariaDB master
+  hosts: all
+  become: yes
+  tasks:
+    - name: Update and upgrade apt packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Install MariaDB server
+      apt:
+        name: mariadb-server
+        state: present
+
+    - name: Install PyMySQL
+      apt:
+        name: python3-pymysql
+        state: present
+
+    - name: Ensure MariaDB service is running and enabled
+      service:
+        name: mariadb
+        state: started
+        enabled: yes
+
+    - name: Configure MariaDB for replication
+      copy:
+        dest: /etc/mysql/mariadb.conf.d/50-server.cnf
+        content: |
+          [mysqld]
+          bind-address=0.0.0.0
+          server-id="{{ worker_id }}"
+          log_bin=mysql-bin
+          relay_log=relay-bin
+          binlog_do_db=testdb
+          replicate_do_db=testdb
+
+    - name: Restart MariaDB to apply changes
+      service:
+        name: mariadb
+        state: restarted
+
+    - name: Create replication user
+      mysql_user:
+        name: repl_user
+        password: your_password
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        priv: '*.*:REPLICATION SLAVE'
+        host: '%'
+        state: present
+  
+    - name: Get master status
+      command: mysql -u root -e "SHOW MASTER STATUS\G"
+      register: master_status
+
+    - name: Configure replication on slave
+      mysql_replication:
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        mode: slave
+        master_host: 10.0.0.16
+        master_user: repl_user
+        master_password: repl_password
+        master_log_file: "{{ master_status.stdout | regex_search('File: (.*)', '\\1') }}"
+        master_log_pos: "{{ master_status.stdout | regex_search('Position:[0] (.*)', '\\1') }}"

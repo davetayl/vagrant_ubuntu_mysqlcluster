@@ -1,0 +1,82 @@
+---
+- name: Update Debian Bullseye64 and set up MariaDB master
+  hosts: all
+  become: yes
+  tasks:
+    - name: Update and upgrade apt packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Install MariaDB server
+      apt:
+        name: mariadb-server
+        state: present
+
+    - name: Install PyMySQL
+      apt:
+        name: python3-pymysql
+        state: present
+
+    - name: Ensure MariaDB service is running and enabled
+      service:
+        name: mariadb
+        state: started
+        enabled: yes
+
+    - name: Set MariaDB root password
+      mysql_user:
+        login_user: root
+        login_host: localhost
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        name: root
+        password: password
+        host: '%'
+        priv: '*.*:ALL,GRANT'
+        state: present
+    
+    - name: Remove root@localhost user
+      mysql_user:
+        login_user: root
+        login_host: localhost
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        name: root
+        host: localhost
+        state: absent
+
+    - name: Configure MariaDB for replication
+      lineinfile:
+        path: /etc/mysql/mariadb.conf.d/50-server.cnf
+        regexp: '^#?(^bind-address=|server-id|log_bin|binlog_do_db|binlog_ignore_db)'
+        line: "{{ item }}"
+        state: present
+      with_items:
+        - "bind-address = 0.0.0.0"
+        - "server-id = 1"
+        - "log_bin = /var/log/mysql/mysql-bin.log"
+        - "binlog_do_db = testdb"
+        - "binlog_ignore_db = information_schema"
+        - "binlog_ignore_db = mysql"
+        - "binlog_ignore_db = performance_schema"
+
+    - name: Restart MariaDB to apply changes
+      service:
+        name: mariadb
+        state: restarted
+
+    - name: Create replication user
+      mysql_user:
+        login_user: root
+        login_password: password
+        name: repl_user
+        password: repl_password
+        priv: '*.*:REPLICATION SLAVE'
+        host: '%'
+        state: present
+
+    - name: Create test database
+      mysql_db:
+        login_user: root
+        login_password: password
+        name: testdb
+        state: present

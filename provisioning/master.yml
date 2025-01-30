@@ -1,5 +1,5 @@
 ---
-- name: Update Ubuntu Bionic and set up MySQL master
+- name: Update Ubuntu Focal and set up MySQL master
   hosts: all
   become: yes
   tasks:

@@ -8,5 +8,3 @@ The primary database is accessable at localhost:63306 on teh vagrant host machin
 
 UN: root
 PW: password
-
-

@@ -1,6 +1,6 @@
 Vagrant.configure("2") do |config|
   config.vm.define "master" do |master|
-      master.vm.box = "debian/bullseye64"
+      master.vm.box = "ubuntu/focal64"
       master.vm.provider "virtualbox" do |vb|
           vb.memory = 2048
           vb.cpus = 2
@@ -14,7 +14,7 @@ Vagrant.configure("2") do |config|
   end
   (1..3).each do |i|
     config.vm.define "worker#{i}" do |worker|
-      worker.vm.box = "debian/bullseye64"
+      worker.vm.box = "ubuntu/focal64"
       worker.vm.provider "virtualbox" do |vb|
           vb.memory = 2048
           vb.cpus = 2

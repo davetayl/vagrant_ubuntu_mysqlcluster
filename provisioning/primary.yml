@@ -36,6 +36,10 @@
           binlog-format           = ROW
           innodb-flush-log-at-trx-commit  = 1
           sync-binlog             = 1
+          binlog-ignore-db        = mysql
+          binlog-ignore-db        = information_schema
+          binlog-ignore-db        = performance_schema
+          binlog-ignore-db        = sys
 
     - name: Restart MySQL to apply changes
       service:
